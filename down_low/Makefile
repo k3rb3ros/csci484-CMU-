@@ -2,7 +2,7 @@ CC:=gcc #C Compiler
 CFLAGS:=-std=c99 -O0 -g -Wall -Wextra #C Compiler flags
 CPP:=g++ #C++ Compiler
 CPPFLAGS:=-std=gnu++0x -O0 -g -Wall -Wextra #C++ Compiler flags
-CPPEXTRA:= -lSDL -lSDL_net
+LDFLAGS:= -lSDL -lSDL_net
 CSOURCES= #C files used in this program
 CPPSOURCES=network.cpp #CPP files used in this prgram
 COBJECTS=$(CSOURCES:.c=.o) 
@@ -11,13 +11,13 @@ BINARY=down_low
 
 all: $(BINARY) $(COBJECTS) $(CPPOBJECTS)
 .c.o:
-	$(CC) $(CFLAGS) -c $< -o $@ #Invoke gcc for C Files
+	$(CC) $(CFLAGS) -c $< -o $@
 
 .cpp.o:
-	$(CPP) $(CPPFLAGS) -c $< -o $@ #Invke g++ for cpp files
+	$(CPP) $(CPPFLAGS) -c $< -o $@
 
 $(BINARY): $(COBJETS) $(CPPOBJECTS)
-	 $(CPP) $(CPPFLAGS) $(CPPEXTRA) $(COBJECTS) $(CPPOBJECTS) -o $@
+	 $(CPP) $(CPPFLAGS) $(LDFLAGS) $(COBJECTS) $(CPPOBJECTS) -o $@
 
 clean:
 	 rm -rfv $(BINARY) $(COBJECTS) $(CPPOBJECTS)
