@@ -4,7 +4,7 @@ CPP:=g++ #C++ Compiler
 CPPFLAGS:=-std=gnu++0x -O0 -g -Wall -Wextra #C++ Compiler flags
 LDFLAGS:= -lSDL -lSDL_net
 CSOURCES= #C files used in this program
-CPPSOURCES=network.cpp #CPP files used in this prgram
+CPPSOURCES=chat.cpp connection.cpp #CPP files used in this prgram
 COBJECTS=$(CSOURCES:.c=.o) 
 CPPOBJECTS=$(CPPSOURCES:.cpp=.o)
 BINARY=down_low

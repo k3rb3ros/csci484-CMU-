@@ -1,34 +1,34 @@
 /*A class containing all the requried SDLNet functions to connect to another client and 
 to accept connect a connection from another chat client */
+#include<SDL/SDL.h>
+#include<SDL/SDL_net.h>
 class connection
 {
 	public:
-
-	connection(); //Default contructor
-	connection(IPaddress, IPaddress*, Uint16); //Connect knowing ip of client , server and port
+	
+	connection(); //Connect default constructor
+	connection(IPaddress hostname, Uint16 port); //Connect knowing ip of client , server and port
 
 	void close(); //close the connection
-	void connect(IPaddress*); //connect to the server at the ip address passed assume default port
-	void connect(IPaddress*, Uint16); //connect to server at the address at the port specified
-	void connect(IPaddress, IPaddress*, Uint16); //same as constructor
+	void connect(char* host); //connect to the server at the ip address passed assume default port
+	void connect(char* host, Uint16 _port); //connect to server at the address at the port specified
 
 	IPaddress get_ip(); //Get local ip
 	IPaddress get_remote_ip(); //Get server ip
 	int get_status();
-	string get_con_error();
+	char* get_con_error();
 	
-	void send_data(string, int); //Send data with the length of the data
-	char* recieve();
+	void send_data(char* data, int length); //Send data with the length of the data
+	char* receive();
 
 	private:
 
-	string data;
+	char* recieve;
+	char* send;
 	int status;
 	IPaddress ip;
-	IPaddress* remoteip;
+	IPaddress remote_ip;
 	TCPsocket client;
 	TCPsocket server;
-	Uint32 ipaddr;
 	Uint16 port;
-
 };
