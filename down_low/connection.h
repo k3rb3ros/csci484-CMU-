@@ -2,6 +2,8 @@
 to accept connect a connection from another chat client */
 #include<SDL/SDL.h>
 #include<SDL/SDL_net.h>
+#include<iostream>
+using namespace std;
 class connection
 {
 	public:
@@ -18,7 +20,7 @@ class connection
 	int get_status();
 	char* get_con_error();
 	
-	void send_data(char* data, int length); //Send data with the length of the data
+	void send_data(char* data); //Send data with the length of the data
 	char* receive();
 
 	private:

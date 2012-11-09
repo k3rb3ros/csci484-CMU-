@@ -4,7 +4,7 @@ connection::connection()
 {
 	recieve = NULL;
 	send = NULL;
-	status = -1; //not initialized
+	status = -1; //not connected
 	client = NULL;
 	server = NULL;
 	port = 6669;
@@ -61,13 +61,32 @@ char* connection::get_con_error()
 	return NULL;
 }
 
-void connection::send_data(char* data, int length)
+void connection::send_data(char* data)
 {
+	char  header[4];
+	unsigned int len = strlen(data) + 1;
 
+	SDLNet_Write32(len, header); //Write the length of the message to the header
+	if(SDLNet_TCP_Send(client, header, 4) == 4) SDLNet_TCP_Send(client, data, len); //Send it
+	else cout << "Error sending header" << endl;
 }
 
 char* connection::receive()
 {
+	char header[4];
+	unsigned int len;
+
+	while(1)
+	{
+		if(SDLNet_TCP_Recv(server, header, 4) == 4)
+		{
+			len = SDLNet_Read32(header); //Get header if succesfull read data
+		 	recieve = (char*)calloc(len, sizeof(char));
+			SDLNet_TCP_Recv(server, recieve, len);
+			cout << recieve << endl;
+			free(recieve);
+		}
+	}
 	return NULL;
 }
 

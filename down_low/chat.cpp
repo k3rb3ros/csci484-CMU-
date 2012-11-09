@@ -9,6 +9,7 @@ int main(int argc, char** argv)
 	if(SDLNet_Init() == -1) return 2;
 	connection test;
 	cout << "status of connection " << test.get_status() << endl;
+	cout << "Whatever" << endl;
 	test.connect("localhost", 9999);
 	test.close();
 	SDLNet_Quit();
