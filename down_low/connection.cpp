@@ -2,58 +2,175 @@
 
 connection::connection()
 {
-	recieve = NULL;
+	receive = NULL;
 	send = NULL;
-	status = -1; //not connected
+	cl_is_alive = false;
+	srv_is_alive = false;
+	cl_status = -1; 
+	srv_status = -1;
 	client = NULL;
 	server = NULL;
 	port = 6669;
 }
 
-void connection::close()
+void connection::close_client()
 {
+	cl_is_alive = false;
+	SDL_WaitThread(cl_thread, 0);
 	SDLNet_TCP_Close(client);
+}
+
+void connection::close_server()
+{
+	srv_is_alive = false;
+	SDL_WaitThread(srv_thread, 0);
 	SDLNet_TCP_Close(server);
 }
 
-void connection::connect(char* host)
+Uint32 get_ip(void* _c)
 {
-	status = 1;
-	if(SDLNet_ResolveHost(&remote_ip, host, port) == -1) status = -2; //Resolve the host of client
-	client == SDLNet_TCP_Open(&remote_ip);//Open a TCP Socket for client
-	if(!client) status = -3;
-	if(SDLNet_ResolveHost(&ip, NULL, port) == -1) status = -4; //Resolve the host of the server
-	server = SDLNet_TCP_Open(&ip); //Open a TCP socket for the server
-	if(!server) status = -5;
-	if(status == 1); //spawn thread;
+	connection* c = (connection*)_c;
+	return c -> ip.host;
 }
 
-void connection::connect(char* host, Uint16 _port)
+Uint32 get_remote_ip(void* _c)
 {
-	status = 1;
-	port = _port;
-	if(SDLNet_ResolveHost(&remote_ip, host, port) == -1) status = -2; //Resolve the host of client
-	client == SDLNet_TCP_Open(&remote_ip);//Open a TCP Socket for client
-	if(!client) status = -3;
-	if(SDLNet_ResolveHost(&ip, NULL, port) == -1) status = -4; //Resolve the host of the server
-	server = SDLNet_TCP_Open(&ip); //Open a TCP socket for the server
-	if(!server) status = -5;
-	if(status == 1); //spawn thread;
+	connection* c = (connection*)_c;
+	return c -> remote_ip.host;
 }
 
-IPaddress connection::get_ip()
+int spawn_client(void* _connection)
 {
-	return ip;
-}
-
-IPaddress connection::get_remote_ip()
-{
-	return remote_ip;
-}
-
-int connection::get_status()
-{
+	connection* c = (connection*)_connection;
+	char header[4];
+	int length = -1;
+	cout << "\nClient Running\n";
+	while(c -> cl_is_alive)
+	{
+		if(c -> cl_status == 2 && strcmp(c -> send, "^close^") != 0)//If the message isn't the close command then continue
+		{
+			length = (strlen(c -> send)+1); //Get the length of the message
+			SDLNet_Write32(length, header);
+			if(SDLNet_TCP_Send(c -> client, header, 4) == 4) //Send header and check that send succeaded
+			{
+				if(SDLNet_TCP_Send(c -> client, c -> send, length) == length) c -> cl_status = 1; //Send the data if success then set the status to 1 
+				free(c-> send);
+			}
+			else
+			{
+				c -> cl_status = -3;
+			}
+		}
+		SDL_Delay(10);
+	}
 	return 0;
+}
+
+int spawn_server(void* _connection)
+{
+	connection* c = (connection*)_connection;
+	char header[4];
+	TCPsocket chclient = NULL;
+	int length = -1;
+	while(!chclient)
+	{
+		cout << "\nServer running\n";
+		chclient = SDLNet_TCP_Accept(c -> server);
+		SDL_Delay(10);
+	}
+	c -> srv_status = 2;
+	while(c -> srv_is_alive)
+	{
+		if(c -> srv_status == 2)
+		{
+			if(SDLNet_TCP_Recv(chclient, header, 4) != 4)
+			{
+				cout << "\nError Recieving Header\n";
+				c -> srv_status = -3;
+			}
+			else
+			{
+				length = SDLNet_Read32(header);
+				c -> srv_status = 3;
+			}
+		}
+		else if(c -> srv_status == 3)
+		{
+			c -> receive = (char*)calloc(length, sizeof(char));
+			if(SDLNet_TCP_Recv(chclient, c -> receive, length))
+			{
+				c -> srv_status = 2;
+				cout << "\nMessage: " << c -> receive << endl; //Output the message 
+				free(c -> receive); //consider getting rid of me
+			}
+			else c -> srv_status = -4;
+		}
+		SDL_Delay(10);
+	}
+	return 0;
+}
+
+void connection::connect_client(char* host)
+{
+	cl_status = 1;
+	if(SDLNet_ResolveHost(&remote_ip, host, 6670) == -1) cl_status = -1; //Resolve the host of client
+	client = SDLNet_TCP_Open(&remote_ip);//Open a TCP Socket for client
+	if(!client) cl_status = -2;
+	if(cl_status == 1)
+	{
+		cl_is_alive = true;
+		cl_thread = SDL_CreateThread(spawn_client, this); //Spawn Client thread
+	}
+}
+
+void connection::connect_client(char* host, Uint16 _port)
+{
+	cl_status = 1;
+	if(SDLNet_ResolveHost(&remote_ip, host, _port) == -1) cl_status = -1; //Resolve the host of client
+	client = SDLNet_TCP_Open(&remote_ip);//Open a TCP Socket for client
+	if(!client) cl_status = -2;
+	if(cl_status == 1)
+	{
+		cl_is_alive = true;
+		cl_thread = SDL_CreateThread(spawn_client, this); //Spawn Client thread
+	}
+}
+
+void connection::connect_server()
+{
+	srv_status = 1;
+	if(SDLNet_ResolveHost(&ip, NULL, 6669) == -1) srv_status = -1; //Resolve the host of the server
+	server = SDLNet_TCP_Open(&ip); //Open a TCP socket for the server
+	if(!server) srv_status = -2;
+	if(srv_status == 1)
+	{
+		srv_is_alive = true;
+		srv_thread = SDL_CreateThread(spawn_server, this); //Spawn server thread
+	}
+}
+
+void connection::connect_server(Uint16 _port)
+{
+	srv_status = 1;
+	port = _port;
+	if(SDLNet_ResolveHost(&ip, NULL, port) == -1) srv_status = -1; //Resolve the host of the server
+	server = SDLNet_TCP_Open(&ip); //Open a TCP socket for the server
+	if(!server) srv_status = -2;
+	if(srv_status == 1)
+	{
+		srv_is_alive = true;
+		srv_thread = SDL_CreateThread(spawn_server, this); //Spawn server thread
+	}
+}
+
+int connection::get_cl_status()
+{
+	return cl_status;
+}
+
+int connection::get_srv_status()
+{
+	return srv_status;
 }
 
 char* connection::get_con_error()
@@ -61,32 +178,20 @@ char* connection::get_con_error()
 	return NULL;
 }
 
-void connection::send_data(char* data)
+void connection::_send(char* data)//Fix Me
 {
-	char  header[4];
-	unsigned int len = strlen(data) + 1;
-
-	SDLNet_Write32(len, header); //Write the length of the message to the header
-	if(SDLNet_TCP_Send(client, header, 4) == 4) SDLNet_TCP_Send(client, data, len); //Send it
-	else cout << "Error sending header" << endl;
+	send = data;
+	cl_status = 2;
 }
 
-char* connection::receive()
+void connection::_receive()//Fix Me
 {
-	char header[4];
-	unsigned int len;
-
-	while(1)
+	if(receive != NULL)
 	{
-		if(SDLNet_TCP_Recv(server, header, 4) == 4)
-		{
-			len = SDLNet_Read32(header); //Get header if succesfull read data
-		 	recieve = (char*)calloc(len, sizeof(char));
-			SDLNet_TCP_Recv(server, recieve, len);
-			cout << recieve << endl;
-			free(recieve);
-		}
+		cout << receive << endl;
+		free(receive);
+		receive = NULL;
 	}
-	return NULL;
+	else cout << "\nNothing in buffer\n";
 }
 
