@@ -54,7 +54,7 @@ int spawn_client(void* _connection)
 			if(SDLNet_TCP_Send(c -> client, header, 4) == 4) //Send header and check that send succeaded
 			{
 				if(SDLNet_TCP_Send(c -> client, c -> send, length) == length) c -> cl_status = 1; //Send the data if success then set the status to 1 
-				free(c-> send);
+				for(int i=0; i<260; i++) c -> send[i] = 0;
 			}
 			else
 			{
@@ -96,24 +96,27 @@ int spawn_server(void* _connection)
 		}
 		else if(c -> srv_status == 3)
 		{
-			c -> receive = (char*)calloc(length, sizeof(char));
+			c -> receive = new char[length];
+			cout << "allocating receive buffer at " << & c -> receive << endl;
 			if(SDLNet_TCP_Recv(chclient, c -> receive, length))
 			{
 				c -> srv_status = 2;
 				cout << "\nMessage: " << c -> receive << endl; //Output the message 
-				free(c -> receive); //consider getting rid of me
 			}
 			else c -> srv_status = -4;
+			cout << "freeing " << &c -> receive << endl;
+			delete []  c -> receive; //consider getting rid of me
 		}
 		SDL_Delay(10);
 	}
+	cout << "Server closing\n";
 	return 0;
 }
 
 void connection::connect_client(char* host)
 {
 	cl_status = 1;
-	if(SDLNet_ResolveHost(&remote_ip, host, 6670) == -1) cl_status = -1; //Resolve the host of client
+	if(SDLNet_ResolveHost(&remote_ip, host, 6669) == -1) cl_status = -1; //Resolve the host of client
 	client = SDLNet_TCP_Open(&remote_ip);//Open a TCP Socket for client
 	if(!client) cl_status = -2;
 	if(cl_status == 1)
@@ -189,7 +192,6 @@ void connection::_receive()//Fix Me
 	if(receive != NULL)
 	{
 		cout << receive << endl;
-		free(receive);
 		receive = NULL;
 	}
 	else cout << "\nNothing in buffer\n";

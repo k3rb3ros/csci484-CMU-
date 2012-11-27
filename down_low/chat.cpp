@@ -6,7 +6,7 @@ using namespace std;
 
 char* getLINE()
 {
-	char* c = (char*)calloc(260, sizeof(char));
+	static char c[260];
 	char c2 = 0;
 	int i = 0;
 	do
