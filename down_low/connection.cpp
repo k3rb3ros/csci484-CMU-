@@ -63,6 +63,7 @@ int spawn_client(void* _connection)
 		}
 		SDL_Delay(10);
 	}
+	cout << "Client closeing\n";
 	return 0;
 }
 
@@ -72,12 +73,13 @@ int spawn_server(void* _connection)
 	char header[4];
 	TCPsocket chclient = NULL;
 	int length = -1;
+	if(!chclient) c -> srv_status = 1;
 	while(!chclient)
 	{
-		cout << "\nServer running\n";
 		chclient = SDLNet_TCP_Accept(c -> server);
 		SDL_Delay(10);
 	}
+	cout << "\nServer running\n";
 	c -> srv_status = 2;
 	while(c -> srv_is_alive)
 	{
@@ -97,19 +99,18 @@ int spawn_server(void* _connection)
 		else if(c -> srv_status == 3)
 		{
 			c -> receive = new char[length];
-			cout << "allocating receive buffer at " << & c -> receive << endl;
 			if(SDLNet_TCP_Recv(chclient, c -> receive, length))
 			{
 				c -> srv_status = 2;
 				cout << "\nMessage: " << c -> receive << endl; //Output the message 
 			}
-			else c -> srv_status = -4;
-			cout << "freeing " << &c -> receive << endl;
+			else c -> srv_status = -4; //error recieveing message
 			delete []  c -> receive; //consider getting rid of me
 		}
 		SDL_Delay(10);
 	}
 	cout << "Server closing\n";
+	SDLNet_TCP_Close(chclient);
 	return 0;
 }
 
