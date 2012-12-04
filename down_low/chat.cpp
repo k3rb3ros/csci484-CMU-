@@ -1,7 +1,7 @@
-#include "connection.h"
 #include <iostream>
 #include <stdlib.h>
 #include <string.h>
+#include "connection.h"
 using namespace std;
 
 char* getLINE()
