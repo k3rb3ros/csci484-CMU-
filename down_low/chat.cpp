@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "connection.h"
+#include "test_crypt.h"
 using namespace std;
 
 char* getLINE()
@@ -19,11 +20,12 @@ char* getLINE()
 	return c;
 }
 
-int main(int argc, char** argv)
+int main()
 {
 
 	char* message;
 	string username = "k3rb3ros";
+	/*
 	if(SDL_Init(0) == -1) return 1;
 	if(SDLNet_Init() == -1) return 2;
 	connection test;
@@ -41,5 +43,7 @@ int main(int argc, char** argv)
 	test.close_server();
 	SDLNet_Quit();
 	SDL_Quit();
+	*/
+	test_crypt();
 	return 0;
 }

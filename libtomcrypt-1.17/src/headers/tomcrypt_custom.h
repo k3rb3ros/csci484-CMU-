@@ -66,16 +66,19 @@
 #define XQSORT qsort
 #endif
 
+
 //*************K3rb3ros setting changes***************
-/* Turn off everything but RSA */
+// Turn off everything but RSA
 #define LTC_NO_CIPHERS //turn off block ciphers
-#define LTC_NO_MODES
-#define LTC_NO_HASHES
-#define LTC_NO_MACS
-//Define /dev/urandom and /dev/random to seed rsa keys
+#define LTC_NO_MODES //turn off uneeded encryption modes
+#define LTC_NO_HASHES//turn off hash support
+#define LTC_NO_MACS//turn off mac support
+//Define everything we need for FORTRUNA PRNG to seed gen rsa keys
+//#define LTC_NO_PRNGS //No PRNGS except for the ones I want
 #define LTC_NO_PRNGS
 #define TRY_URANDOM_FIRST
 #define LTC_DEVRANDOM
+#define LTC_SPRNG
 #define LTC_NO_PK
 #define LTC_MRSA //enable rsa
 #define LTC_HMAC //attempt to fix compile error
