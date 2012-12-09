@@ -1,8 +1,8 @@
 #include <iostream>
 #include <stdlib.h>
 #include <string.h>
-#include "connection.h"
-#include "test_crypt.h"
+#include "headers/connection.h"
+#include "headers/test_crypt.h"
 using namespace std;
 
 char* getLINE()
