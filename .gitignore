@@ -1,4 +1,2 @@
-libtomcrypt*
-tomsfastmath*
 *.o
 
