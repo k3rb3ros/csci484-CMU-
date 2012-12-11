@@ -82,6 +82,9 @@
 #define LTC_NO_PK
 #define LTC_MRSA //enable rsa
 #define LTC_HMAC //attempt to fix compile error
+//Add TWO_FISH
+#define LTC_TWOFISH
+#define LTC_OFB_MODE
 //*************End of k3rb3ros setting changes**************
 
 /* Easy button? */

@@ -1,5 +1,8 @@
 #include "headers/test_crypt.h"
 #include "stdio.h"
+
+#define ROUNDS 16
+#define BLOCKSIZE 16 //128/8 = 16
 using namespace std;
 
 void print_buff(unsigned char* buff, unsigned long int len)
@@ -11,8 +14,58 @@ void init_buff(unsigned char* buff, unsigned long int len)
 {
 	for(unsigned long int i = 0; i < len; i++) buff[i] = 0;
 }
+
+//Treat my like gold
+int init_twofish(unsigned char* iv, unsigned char* key, symmetric_OFB *ofb) //init twofish cipher
+{
+	int err = CRYPT_OK;
+	if(register_cipher(&twofish_desc) == -1) //register twofish
+	{
+		cout << "Unable to register Twofish Cipher\n";
+	}
+
+	if((err = ofb_start(find_cipher("twofish"), iv, key, BLOCKSIZE, ROUNDS,  ofb)) != CRYPT_OK) //start ctr mode
+	{
+		cout << "Error starting ofb mode " << error_to_string(err) << endl;	
+	}
+	return err;
+}
+
+void test_twofish()
+{
+	symmetric_key tf_key;
+	unsigned char pt[16], ct[16], key[16];
+	int err;
+	int keysize = 16;
+	unsigned char iv[16];
+	symmetric_OFB ofb;
+	strcpy((char*)pt, "Attack at dawn9");
+	strcpy((char*)key, "kz6JN2qblx7KM3w");
+	strcpy((char*)iv, "Hurpa_Durpa");
+	twofish_keysize(&keysize);
+	
+	init_twofish(iv, key, &ofb);
+
+	//Read to go here
+	cout << "Plaintext: " << pt << endl;
+	cout << "Key: " << key << endl;
+	ofb_encrypt(pt, pt, 16, &ofb);
+	cout << "Ciphertext: " << ct << endl;
+	cout << "Decrypting...\n"; 
+	ofb_setiv(iv, 16, &ofb);
+	ofb_decrypt(pt, pt, 16, &ofb);
+	cout << "Resulttext: " << pt << endl;
+
+	//Done
+	twofish_done(&tf_key); //done here
+}
 void test_crypt()
 {
+ test_twofish();
+}
+void temp_crypt()
+{
+	
 	#define KEYSIZE 2048
 	int err = 0;
 	int rng_idx = -1; //rng index
@@ -20,7 +73,6 @@ void test_crypt()
 	int res = -1; //used to check the validity of data
 	ltc_mp = tfm_desc; //register tomsfast math
 	rsa_key me; //rsa key pair
-	rsa_key them;
 	prng_state sprng; //prng descriptor
 	unsigned char m1[32], m2[32], out[KEYSIZE];
 	unsigned long int l1 = -1;
@@ -31,7 +83,7 @@ void test_crypt()
 		cout << "Error registering prng " << endl;
 	}
 	
-	if (register_hash(&sha256_desc) == -1)
+	if(register_hash(&sha256_desc) == -1)
 	{
 		printf("Error registering sha256");
 	}
@@ -68,61 +120,45 @@ void test_crypt()
 		cout << "My Private key: " << me.d << endl;
 		cout << "My Public key: " << me.e << endl;
 	}
-
-	//their key
-	if((err = rsa_make_key(&sprng,         	//PRNG state  //generate rsa pub/private keypair
-			       rng_idx,        	//PRNG idx
-			       KEYSIZE/8,       //Size of key
-			       65537,          	//e
-			       &them)      	//RSA key
-				) != CRYPT_OK) 	//if conditon test
-	{
-		cout << "RSA Key Generation error " << error_to_string(err) << endl; 
-	}
-	else 
-	{
-		cout << "There Private key: " << them.d << endl;
-		cout << "There Public key: " << them.e << endl;
-	}
-	unsigned char my_export[KEYSIZE];
-	unsigned char their_export[KEYSIZE];
-	init_buff(my_export, KEYSIZE);
+	unsigned char my_private[KEYSIZE];
+	unsigned char my_public[KEYSIZE];
+	init_buff(my_private, KEYSIZE);
 	unsigned long int keylen = -1;
 	keylen = KEYSIZE; //A quick way to standardize keysize
-	//Export my key to buffer
-	if((err = rsa_export(my_export,		//Export buffer --> Send over network
+	//Export my private key to buffer
+	if((err = rsa_export(my_private,		//Export buffer --> Send over network
+			     &keylen,		//size of key (BYTES)
+			     PK_PRIVATE,	//Export our public key to create the new shared key
+			     &me)		//My public key
+	   ) != CRYPT_OK)
+	{
+		cout << "Error exporting private key" << endl;
+	}
+	else
+	{
+		cout << "Private_key succesfully exported\n"; 
+		/*
+		cout << "My pub key: [[[";
+		print_buff(my_private, (unsigned long int)KEYSIZE);
+		cout << "]]] length of key " <<strlen((const char*)my_private) <<endl;
+		*/
+	}
+	
+	if((err = rsa_export(my_public,	//Export buffer --> Send over network
 			     &keylen,		//size of key (BYTES)
 			     PK_PUBLIC,		//Export our public key to create the new shared key
 			     &me)		//My public key
 	   ) != CRYPT_OK)
 	{
-		cout << "Error exporting my key" << endl;
-	}
-	else
-	{
-		cout << "My_key succesfully exported\n"; 
-		/*
-		cout << "My pub key: [[[";
-		print_buff(my_export, (unsigned long int)KEYSIZE);
-		cout << "]]] length of key " <<strlen((const char*)my_export) <<endl;
-		*/
-	}
-	
-	if((err = rsa_export(their_export,	//Export buffer --> Send over network
-			     &keylen,		//size of key (BYTES)
-			     PK_PUBLIC,		//Export our public key to create the new shared key
-			     &them)		//My public key
-	   ) != CRYPT_OK)
-	{
-		cout << "Error exporting their key" << endl;
+		cout << "Error exporting public key" << endl;
 	}
 	else
 	{
 		cout << "There_key successfully exported\n";
 		/*
 		cout << "My pub key: [[[";
-		print_buff(their_export, (unsigned long int)KEYSIZE);
-		cout << "]]] length of key " <<strlen((const char*)my_export) <<endl;
+		print_buff(my_public, (unsigned long int)KEYSIZE);
+		cout << "]]] length of key " <<strlen((const char*)my_private) <<endl;
 		*/
 	}
 	//Export their key to buffer
@@ -132,27 +168,25 @@ void test_crypt()
 	//Me <-- ###Network### <-- Their_Public Key
 	
 	//Mix their key with my key
-	if((err = rsa_import(my_export, KEYSIZE, &them)) != CRYPT_OK)
+	if((err = rsa_import(my_private, KEYSIZE, &me)) != CRYPT_OK)
 	{
-		cout << "Error importing my_public key to them" << endl;
+		cout << "Error importing my_private key to me" << endl;
 	}
 	else
 	{
-		cout << "There new Private key: " << them.d << endl;
-		cout << "There new Public key: " << them.e << endl;
 	}
 
 	//Mix my key with their key
-	if((err = rsa_import(their_export, KEYSIZE, &me)) != CRYPT_OK)
+	if((err = rsa_import(my_public, KEYSIZE, &me)) != CRYPT_OK)
 	{
 		cout << "Error importing their_public key to me" << endl;
 	}
 	else
 	{
-		cout << "My new Private key: " << me.d << endl;
-		cout << "My new Public key: " << me.e << endl;
 	}
 
+		cout << "Imported Private key: " << me.d << endl;
+		cout << "Imported Public key: " << me.e << endl;
         //*******************************************************************************************************************************
 	//Diffie helmann key exchange
         //*******************************************************************************************************************************
@@ -177,7 +211,7 @@ void test_crypt()
 					&sprng, 	//Our rng state
 					rng_idx,	//Our rng index
 					hash_idx,	//Our hash index
-					&them) 	//Our rsa keypair
+					&me) 	//Our rsa keypair
 	   )			 != CRYPT_OK)
 
 	{
@@ -198,7 +232,7 @@ void test_crypt()
 					0,		//With a length of zero
 					hash_idx,	//Our hash index
 					&res,		//Validity of data
-					&them) 	        //There rsa keypair
+					&me) 	        //There rsa keypair
 	   )			 != CRYPT_OK)
 
 	{

@@ -5,7 +5,7 @@ CXXFLAGS:=-DTFM_DESC -std=gnu++0x -O0 -I/home/k3rb3ros/csci484/csci484-CMU-/libt
 LPATHS:=-L./libs
 LDFLAGS:=-lSDL -lSDL_net -ltomcrypt -ltfm
 CSOURCES= #C files used in this program
-CXXSOURCES=connection.cpp chat.cpp test_crypt.cpp #CPP files used in this prgram
+CXXSOURCES=connection.cpp chat.cpp crypt.cpp #CPP files used in this prgram
 COBJECTS=$(CSOURCES:.c=.o)
 CXXOBJECTS=$(CXXSOURCES:.cpp=.o)
 BINARY=down_low
@@ -21,4 +21,4 @@ $(BINARY): $(COBJETS) $(CXXOBJECTS)
 	 $(CXX) $(CXXFLAGS) $(LPATHS) $(COBJECTS) $(CXXOBJECTS) -o $@ $(LDFLAGS)
 
 clean:
-	 rm -rv $(BINARY) $(COBJECTS) $(CXXOBJECTS)
+	 rm -rv $(BINARY) $(COBJECTS) $(CXXOBJECTS) *.o

@@ -25,7 +25,6 @@ int main()
 
 	char* message;
 	string username = "k3rb3ros";
-	/*
 	if(SDL_Init(0) == -1) return 1;
 	if(SDLNet_Init() == -1) return 2;
 	connection test;
@@ -43,7 +42,5 @@ int main()
 	test.close_server();
 	SDLNet_Quit();
 	SDL_Quit();
-	*/
-	test_crypt();
 	return 0;
 }
